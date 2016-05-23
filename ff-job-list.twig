@@ -1,0 +1,90 @@
+{% extends "base.twig" %}
+
+{% set extra_css = ['careers','editorialpage'] %}
+
+{% block wholemain %}
+	{% set banner_image = image_to_css_url(post.banner_image) %}
+	{% set banner_image = banner_image ? 'background:'~banner_image~' center/cover no-repeat;' : ''  %}
+	<div id="masthead" style="{{ banner_image }}">
+		{{ post.banner_image|default(fpo_banner)|picture }}
+	</div>
+	<main role="main">
+		{#{{ _self.getTemplateName() }}#}
+		<header id="main-header">
+			<div id="pre-headline">{{ post.small_text_title }}</div>
+			<h1>{{ post.large_text_title }}</h1>
+		</header>
+		{% set types = get_job_listings_by_type() %}
+		{% set srjobs  = get_smart_recruiter_jobs() %}
+		{% set jobcategories = get_job_categories() %}
+		
+		<section id="filter">
+			Filter Results<br/>
+			<select name="" id="">
+				<option value="">{{ post.all_filter_text }}</option>
+					{% for jobcategory in jobcategories %}
+						<option value="{{ jobcategory.slug }}">{{ jobcategory.name }}</option>
+					{% endfor %}
+			</select>
+		</section>
+		
+		{% set section_class = 'jobs' %}
+		
+		{% if types|length > 0 %}
+		<section class="{{ section_class }}" class="wp-author-content">
+		{% for jobcategory in jobcategories %}
+					{% set wpjobexists = 'NULL' %}
+					{% set srjobexists = 'NULL' %}
+				<div class="job-type {{ jobcategory.slug }}">
+					<h2>{{ jobcategory.name }}</h2>
+					<table>
+					{% for type in types %}
+					{% if type.name == jobcategory.name %}
+						{% if jobcategory.name in type.name %}{% set wpjobexists = 'yes' %}{% endif%}
+						{% for job in type.posts %}
+							<tr class="{{ job.my_taxonomies|join(' ') }}">
+								<td></td>
+								<td><a href="/jobs/{{ job.slug }}/"><b>{{job.name}}</b></a><br/><span>{{job.job_location}} &mdash; {{ job.job_shift }}</span></td>
+								<td><a href="/jobs/{{ job.slug }}/">{% if job.is_featured %}{{ star() }}{% endif %}</a></td>							
+							</tr>
+							{% endfor %}
+						{% endif %}
+						{% endfor %}
+						{% for srjobdata in srjobs.srjobdata %}
+						{% if jobcategory.name == srjobdata.department.label|escape %}
+						{% if jobcategory.name in srjobdata.department.label|escape %}{% set srjobexists = 'yes' %}{% endif%}
+						<tr>
+							<td></td>
+							<td><a href="https://www.smartrecruiters.com/FosterFarms/{{ srjobdata.id }}" target="_blank"><b>{{ srjobdata.name }}</b></a><br /><span>{{ srjobdata.location.city }}&#44; {{ srjobdata.location.region }}{% for shift in srjobdata.customField %}
+							{% if shift.fieldId == '571949f4e4b073b78de336c8'|escape %}
+								&mdash;{{ shift.valueLabel }}
+							{% endif %}
+							{% endfor %}
+							{% for shift in srjobdata.customField %}
+							{% if shift.fieldId == '56fedaaae4b0b44d3dffae64'|escape %}
+							<br />Grade: {{ shift.valueLabel }}
+							{% endif %}
+							{% endfor %}
+							</span>
+							</td>
+							<td></td>
+						</tr>
+						{% endif %}
+						{% endfor %}	
+						{% if srjobexists == 'NULL' and wpjobexists == 'NULL' %}
+						<tr>
+							<td></td>
+							<td><span>No jobs are currently available in this category.</span></td>
+							<td></td>
+						</tr>
+						{% endif %}
+					</table>
+				</div>
+				{% if type.slug == 'featured' %}
+					</section>
+				{% endif %}
+			{% endfor %}
+			</section>
+		{% endif %}
+	</main>
+{% endblock %}
